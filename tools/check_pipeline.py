@@ -32,8 +32,9 @@ def main() -> None:
         help="Save verification evidence outside the temporary fixture",
     )
     args = parser.parse_args()
-    snow_python = str(Path(args.snowballer_python).resolve())
-    classifier_python = str(Path(args.classifier_python).resolve())
+    # Resolving a venv interpreter symlink on Linux loses its environment.
+    snow_python = str(Path(args.snowballer_python).absolute())
+    classifier_python = str(Path(args.classifier_python).absolute())
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -103,6 +104,7 @@ def main() -> None:
             )
             assert result.returncode == 1, result.stdout + result.stderr
             source = root / "content"
+            assert (source / "batch.json").is_file(), result.stdout + result.stderr
             before = {
                 p.relative_to(source).as_posix(): hashlib.sha256(
                     p.read_bytes()
