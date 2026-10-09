@@ -1,0 +1,66 @@
+name: Python checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: "3.11"
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: windows-latest
+            python: "3.12"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m ruff check src tests tools
+      - run: python -m ruff format --check src tests tools
+      - run: python -m pytest -q
+      - run: python -m build --wheel
+
+  installed-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install build
+      - run: python -m build --wheel
+      - run: python -m venv /tmp/classifier-core
+      - run: /tmp/classifier-core/bin/python -m pip install dist/*.whl
+      - run: /tmp/classifier-core/bin/python tools/check_install.py
+
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: antoniofaical/institutional-site-snowballer
+          ref: b28ecb02b266c9fe7cefb32c1ab26ad05f1e8318
+          path: .validation/snowballer
+      - uses: actions/checkout@v4
+        with:
+          repository: antoniofaical/startup-theme-adherence-classifier-jev
+          ref: dbd6c4cc4fb35bb820205b500b2bdf67eb84b34b
+          path: .validation/reference
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install build
+      - run: python -m build --wheel
+      - run: python -m venv /tmp/snowballer-core
+      - run: python -m venv /tmp/classifier-core
+      - run: /tmp/snowballer-core/bin/python -m pip install .validation/snowballer
+      - run: /tmp/classifier-core/bin/python -m pip install dist/*.whl
+      - run: /tmp/classifier-core/bin/python tools/check_pipeline.py --snowballer-python /tmp/snowballer-core/bin/python --classifier-python /tmp/classifier-core/bin/python --reference-source .validation/reference/src --report .validation/pipeline-report.json

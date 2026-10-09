@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "profile-adherence-classifier"
+version = "0.1.0"
+description = "Independent chunk classification and profile adherence scoring"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["requests>=2.31,<3", "jsonschema>=4.21,<5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "ruff>=0.7,<1", "build>=1,<2"]
+
+[project.scripts]
+profile-adherence-classifier = "profile_adherence_classifier.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"profile_adherence_classifier.profiles" = ["*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
